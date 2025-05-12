@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_main">#2c3e50</color>
+    <color name="bg_elements">#34495e</color>
+    <color name="bg_elements_lighter">#4a627a</color>
+    <color name="bg_sidebar">#314354</color>
+    <color name="bg_subtask">#3e576f</color>
+    <color name="text_primary">#ecf0f1</color>
+    <color name="text_secondary">#bdc3c7</color>
+    <color name="text_timestamp">#95a5a6</color>
+    <color name="accent_primary">#3498db</color>
+    <color name="accent_secondary">#2ecc71</color>
+    <color name="accent_danger">#e74c3c</color>
+    <color name="accent_warning">#f39c12</color>
+
+    <color name="priority_high_color">#e74c3c</color>
+    <color name="priority_medium_color">#f39c12</color>
+    <color name="priority_low_color">#2ecc71</color>
+
+    <color name="task_done_bg">#3a5064</color>
+    <color name="task_done_text_decoration">#bdc3c7</color>
+
+    <color name="bg_elements_lighter_widget">#455A64</color> <color name="bg_elements_widget_border">#546E7A</color> <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

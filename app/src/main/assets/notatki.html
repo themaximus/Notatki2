@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Умная Доска Задач v5.4 - Исправления</title>
+  <style>
+    /* Стили CSS остаются такими же */
+    :root {
+      --bg-main: #2c3e50;
+      --bg-elements: #34495e;
+      --bg-elements-lighter: #4a627a;
+      --bg-sidebar: #314354;
+      --bg-subtask: #3e576f;
+      --text-primary: #ecf0f1;
+      --text-secondary: #bdc3c7;
+      --text-timestamp: #95a5a6;
+      --accent-primary: #3498db;
+      --accent-secondary: #2ecc71;
+      --accent-danger: #e74c3c;
+      --accent-warning: #f39c12;
+
+      --shadow-color-dark: rgba(0,0,0,0.2);
+      --shadow-color-light: rgba(255,255,255,0.05);
+
+      --border-radius-main: 12px;
+      --border-radius-small: 8px;
+
+      --priority-high-color: #e74c3c;
+      --priority-medium-color: #f39c12;
+      --priority-low-color: #2ecc71;
+
+      --sidebar-width: 300px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+      background-color: var(--bg-main);
+      background-image: linear-gradient(45deg, rgba(0,0,0,0.03) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.03) 50%, rgba(0,0,0,0.03) 75%, transparent 75%, transparent);
+      background-size: 30px 30px;
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s;
+      overflow-x: hidden;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5); opacity: 0; visibility: hidden;
+      z-index: 999; transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    }
+    .overlay.active { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.3s ease;
+    }
+    .modal-dialog {
+      background-color: var(--bg-elements);
+      padding: 25px;
+      border-radius: var(--border-radius-main);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-dialog {
+        transform: scale(1);
+    }
+    .modal-dialog p {
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+    .modal-buttons button {
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: var(--border-radius-small);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      min-width: 100px;
+      margin: 0 8px;
+    }
+    #customConfirmOk {
+      background-color: var(--accent-danger);
+      color: white;
+    }
+    #customConfirmOk:hover {
+      background-color: #c0392b;
+    }
+    #customConfirmCancel {
+      background-color: var(--bg-elements-lighter);
+      color: var(--text-primary);
+    }
+    #customConfirmCancel:hover {
+      background-color: var(--bg-sidebar);
+    }
+
+    .sidebar {
+      position: fixed; top: 0; left: calc(-1 * var(--sidebar-width));
+      width: var(--sidebar-width); height: 100vh; background-color: var(--bg-sidebar);
+      box-shadow: 4px 0 15px rgba(0,0,0,0.25); z-index: 1000; display: flex;
+      flex-direction: column; padding: 1.5rem 1rem; transition: left 0.3s ease-in-out;
+    }
+    .sidebar.active { left: 0; }
+    .sidebar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--bg-elements-lighter);
+    }
+    .sidebar-header h3 { font-size: 1.4rem; color: var(--text-primary); font-weight: 500; }
+
+    .btn-icon {
+        background: transparent; border: none; color: var(--text-secondary);
+        font-size: 1.2rem;
+        cursor: pointer; padding: 0.3rem; line-height: 1;
+        border-radius: 50%; width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { background-color: var(--bg-elements-lighter); color: var(--text-primary); }
+
+    .board-list { list-style: none; flex-grow: 1; overflow-y: auto; margin-bottom: 1rem; }
+    .board-list-item {
+      padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: var(--border-radius-small);
+      color: var(--text-secondary); cursor: pointer; transition: background-color 0.2s, color 0.2s;
+      font-size: 1rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    .board-list-item:hover { background-color: var(--bg-elements-lighter); color: var(--text-primary); }
+    .board-list-item.active-board { background-color: var(--accent-primary); color: #fff; font-weight: 500; }
+
+    .board-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .board-list-item .btn-edit-board-name {
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+     .board-list-item:hover .btn-edit-board-name {
+        opacity: 1;
+        color: var(--accent-warning);
+    }
+    .board-list-item.active-board .btn-edit-board-name {
+        color: rgba(255,255,255,0.7);
+    }
+    .board-list-item.active-board .btn-edit-board-name:hover {
+        color: #fff;
+        background-color: rgba(0,0,0,0.2);
+    }
+
+    .board-list-item .btn-delete-board-item {
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+    .board-list-item:hover .btn-delete-board-item { opacity: 1; color: var(--accent-danger); }
+    .board-list-item.active-board .btn-delete-board-item { color: rgba(255,255,255,0.7); }
+    .board-list-item.active-board .btn-delete-board-item:hover { color: #fff; background-color: rgba(0,0,0,0.2); }
+
+    .sidebar-footer { padding-top: 1rem; border-top: 1px solid var(--bg-elements-lighter); }
+    #newBoardNameInput {
+      width: 100%; padding: 0.7rem; margin-bottom: 0.75rem; border-radius: var(--border-radius-small);
+      border: 1px solid var(--bg-elements-lighter); background-color: var(--bg-elements);
+      color: var(--text-primary); font-size: 0.9rem;
+    }
+    #newBoardNameInput::placeholder { color: var(--text-secondary); }
+    #addBoardBtn { width: 100%; background-color: var(--accent-secondary); color: #fff; }
+    #addBoardBtn:hover { background-color: #27ae60; }
+
+    header {
+      padding: 1rem 2rem;
+      background: var(--bg-elements);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--bg-elements-lighter);
+      position: relative;
+      z-index: 10;
+    }
+    .app-title {
+      display: flex; align-items: center; gap: 0.75rem; font-weight: 500; cursor: pointer;
+      padding: 0.25rem 0.5rem; border-radius: var(--border-radius-small); transition: background-color 0.2s;
+    }
+    .app-title:hover { background-color: var(--bg-elements-lighter); }
+    .app-title svg { width: 28px; height: 28px; fill: var(--accent-primary); }
+
+    .btn {
+      padding: 0.7rem 1.2rem; border: none; border-radius: var(--border-radius-small);
+      font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out;
+      background-color: var(--bg-elements-lighter); color: var(--text-primary);
+      box-shadow: 3px 3px 6px var(--shadow-color-dark), -3px -3px 6px var(--shadow-color-light);
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .btn:hover { background-color: var(--accent-primary); color: #fff; }
+    .btn:active { box-shadow: inset 3px 3px 6px var(--shadow-color-dark), inset -3px -3px 6px var(--shadow-color-light); transform: translateY(1px); }
+    .btn-add-column { background-color: var(--accent-secondary); color: #fff; }
+
+    .board {
+      display: flex; gap: 1.5rem; padding: 1.5rem; overflow-x: auto;
+      flex-wrap: nowrap; min-height: calc(100vh - 75px);
+      align-items: flex-start;
+    }
+    .column {
+      background: var(--bg-elements); border-radius: var(--border-radius-main);
+      padding: 1rem 1.2rem; width: 340px; min-width: 340px;
+      box-shadow: 5px 5px 15px var(--shadow-color-dark), -5px -5px 10px var(--shadow-color-light);
+      display: flex; flex-direction: column; transition: box-shadow 0.3s ease;
+    }
+    .column-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--bg-elements-lighter);
+    }
+    .column-title-input {
+      font-size: 1.2rem; font-weight: 600; border: none; background: transparent;
+      color: var(--text-primary); outline: none; flex-grow: 1; padding: 0.4rem;
+      border-radius: var(--border-radius-small);
+    }
+    .btn-delete {
+        background: transparent; color: var(--text-secondary); padding: 0.4rem;
+        border-radius: 50%; box-shadow: none; width: 36px; height: 36px;
+        display: flex; align-items: center; justify-content: center;
+        border: none;
+    }
+    .btn-delete svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-delete:hover { background-color: var(--accent-danger); color: #fff; }
+
+    .tasks-list {
+      flex-grow: 1; min-height: 60px; display: flex; flex-direction: column;
+      gap: 1rem; overflow-y: auto; padding-right: 8px; margin-right: -8px;
+    }
+    .tasks-list::-webkit-scrollbar { width: 8px; }
+    .tasks-list::-webkit-scrollbar-track { background: var(--bg-elements); border-radius: 10px; }
+    .tasks-list::-webkit-scrollbar-thumb { background: var(--bg-elements-lighter); border-radius: 10px; }
+    .tasks-list::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+
+    .task {
+      background: var(--bg-elements-lighter); border-radius: var(--border-radius-small);
+      padding: 0.8rem 1rem; box-shadow: 3px 3px 8px var(--shadow-color-dark), -3px -3px 6px var(--shadow-color-light);
+      display: flex; flex-direction: column; transition: all 0.2s ease-in-out;
+      position: relative; border-left: 4px solid transparent;
+    }
+    .task.priority-high { border-left-color: var(--priority-high-color); }
+    .task.priority-medium { border-left-color: var(--priority-medium-color); }
+    .task.priority-low { border-left-color: var(--priority-low-color); }
+
+    .task-main-content { margin-bottom: 0.5rem; }
+    .task textarea {
+      border: none; resize: none; background: transparent; outline: none;
+      width: 100%; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary);
+      white-space: pre-wrap; overflow-wrap: break-word; min-height: 40px;
+      border-radius: 4px; padding: 0.2rem;
+    }
+    .task-timestamp { font-size: 0.75rem; color: var(--text-timestamp); text-align: right; margin-top: 0.25rem; }
+    .task.task-done { opacity: 0.7; background-color: #3a5064; }
+    .task.task-done textarea { text-decoration: line-through; color: var(--text-secondary); }
+
+    .task-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; gap: 0.5rem; }
+    .task-controls { display: flex; align-items: center; gap: 0.75rem;  }
+    .priority-selector-container { display: flex; align-items: center; gap: 0.3rem; }
+    .priority-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-secondary); }
+    .priority-dot.high { background-color: var(--priority-high-color); }
+    .priority-dot.medium { background-color: var(--priority-medium-color); }
+    .priority-dot.low { background-color: var(--priority-low-color); }
+    .priority-selector {
+        padding: 0.3rem 0.5rem; border-radius: var(--border-radius-small); background: var(--bg-elements);
+        color: var(--text-primary); border: 1px solid var(--bg-elements-lighter); font-size: 0.85rem;
+        box-shadow: 1px 1px 3px var(--shadow-color-dark), -1px -1px 2px var(--shadow-color-light);
+        cursor: pointer; appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23bdc3c7'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;
+        padding-right: 1.8rem;
+    }
+    .btn-add-task-in-column { margin-top: 1rem; background-color: var(--accent-primary); color: #fff; width: 100%; }
+    .task.dragging { opacity: 0.6; transform: rotate(2deg) scale(1.03); background-color: var(--accent-primary); }
+    input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: var(--accent-secondary); cursor: pointer;
+      border-radius: 4px; margin-right: 0.25rem; vertical-align: middle;
+    }
+
+    .subtasks-section { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--bg-elements); }
+    .subtasks-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 0.5rem; cursor: pointer;
+    }
+    .subtasks-header h4 { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+    .subtasks-toggle-icon { transition: transform 0.2s ease-in-out; color: var(--text-secondary); }
+    .subtasks-list.collapsed + .subtasks-header .subtasks-toggle-icon { transform: rotate(-90deg); }
+    .subtasks-list {
+        list-style: none; padding-left: 1rem; max-height: 200px; overflow-y: auto;
+        transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; opacity: 1;
+    }
+    .subtasks-list.collapsed { max-height: 0; opacity: 0; overflow: hidden; margin-top: 0; }
+    .subtask-item {
+        background-color: var(--bg-subtask); padding: 0.5rem 0.75rem;
+        border-radius: var(--border-radius-small); margin-bottom: 0.5rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .subtask-item input[type="text"] {
+        flex-grow: 1; background: transparent; border: none; color: var(--text-primary);
+        font-size: 0.9rem; outline: none;
+    }
+    .subtask-item input[type="text"].done { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
+    .subtask-item .btn-delete-subtask {
+        font-size: 0.9rem; padding: 0.2rem; color: var(--text-secondary);
+        background: none; border: none; cursor: pointer;
+    }
+    .subtask-item .btn-delete-subtask:hover { color: var(--accent-danger); }
+    .btn-add-subtask {
+        font-size: 0.85rem; padding: 0.3rem 0.6rem; color: var(--accent-primary);
+        background-color: transparent; border: 1px dashed var(--accent-primary);
+        border-radius: var(--border-radius-small); margin-top: 0.5rem;
+        display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .btn-add-subtask:hover { background-color: rgba(52, 152, 219, 0.1); color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 1rem;
+        gap: 0.8rem;
+      }
+      .app-title {
+        font-size: 1.4rem;
+      }
+      .btn-add-column {
+        white-space: nowrap;
+      }
+      .board { flex-direction: column; padding: 1rem; gap: 1rem; }
+      .column { width: 100%; min-width: unset; }
+      :root { --sidebar-width: 260px; }
+    }
+  </style>
+</head>
+<body>
+<div class="overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>Мои Доски</h3>
+    <button id="closeSidebarBtn" class="btn-icon" title="Закрыть панель">&times;</button>
+  </div>
+  <ul class="board-list" id="boardList"></ul>
+  <div class="sidebar-footer">
+    <label for="newBoardNameInput" class="visually-hidden">Название новой доски</label>
+    <input type="text" id="newBoardNameInput" placeholder="Название новой доски...">
+    <button id="addBoardBtn" class="btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
+      Создать Доску
+    </button>
+  </div>
+</div>
+
+<header>
+  <div class="app-title" id="appTitleButton" title="Открыть список досок">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zM5 19V5h14l.002 14H5z"/><path d="M7 7h10v2H7zm0 4h7v2H7z"/></svg>
+    <span id="currentBoardTitle">Моя Умная Доска</span>
+  </div>
+  <button class="btn btn-add-column" onclick="addColumnToCurrentBoard()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
+    Добавить колонку
+  </button>
+</header>
+<div class="board" id="boardContainer"></div>
+
+<div class="modal-overlay" id="customConfirmModal">
+  <div class="modal-dialog">
+    <p id="customConfirmMessage">Вы уверены?</p>
+    <div class="modal-buttons">
+      <button id="customConfirmCancel">Отмена</button>
+      <button id="customConfirmOk">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- КОНСТАНТЫ и ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+  const LS_ALL_BOARDS_KEY = 'smartKanbanAllBoards_v5.4_native';
+  const LS_ACTIVE_BOARD_ID_KEY = 'smartKanbanActiveBoardId_v5.4_native';
+  const WIDGET_BOARD_NAME_JS = "Заметки Виджета";
+
+  const ICONS = {
+      delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`,
+      add: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`,
+      subtaskToggle: `<svg class="subtasks-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>`,
+      edit: `✏️`
+  };
+
+  let allBoardsData = {};
+  let activeBoardId = null;
+  let widgetBoardIdFromNative = null;
+  let confirmCallback = null;
+
+  // --- DOM ЭЛЕМЕНТЫ ---
+  const boardContainer = document.getElementById('boardContainer');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const appTitleButton = document.getElementById('appTitleButton');
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const boardListEl = document.getElementById('boardList');
+  const newBoardNameInput = document.getElementById('newBoardNameInput');
+  const addBoardBtn = document.getElementById('addBoardBtn');
+  const currentBoardTitleEl = document.getElementById('currentBoardTitle');
+  const customConfirmModal = document.getElementById('customConfirmModal');
+  const customConfirmMessage = document.getElementById('customConfirmMessage');
+  const customConfirmOkBtn = document.getElementById('customConfirmOk');
+  const customConfirmCancelBtn = document.getElementById('customConfirmCancel');
+
+  // --- УТИЛИТЫ ---
+  function generateId(prefix = 'id') { return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; }
+  function isNativeBridgeAvailable() { return typeof window.AndroidNative !== 'undefined'; }
+
+  function showCustomConfirm(message, callback) {
+      customConfirmMessage.textContent = message;
+      confirmCallback = callback;
+      customConfirmModal.classList.add('active');
+  }
+  function hideCustomConfirm() {
+      customConfirmModal.classList.remove('active');
+      confirmCallback = null;
+  }
+  function toggleSidebar() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
+
+  // --- УПРАВЛЕНИЕ ДАННЫМИ ДОСОК ---
+  async function loadAllBoardsData() {
+      console.log('[DEBUG] loadAllBoardsData: Начало загрузки всех досок.');
+      allBoardsData = {};
+      if (isNativeBridgeAvailable()) {
+          try {
+              const boardsJson = await AndroidNative.getAllBoards();
+              const nativeBoards = JSON.parse(boardsJson);
+              if (Array.isArray(nativeBoards)) {
+                nativeBoards.forEach(board => {
+                    allBoardsData[board.id] = {
+                        id: board.id,
+                        name: board.name,
+                        columns: [], // Колонки и задачи будут загружены при активации доски
+                        isWidgetBoard: board.id === widgetBoardIdFromNative
+                    };
+                });
+              } else {
+                console.warn("[DEBUG] loadAllBoardsData: AndroidNative.getAllBoards() вернул не массив:", nativeBoards);
+              }
+              console.log('[DEBUG] loadAllBoardsData: Доски загружены из AndroidNative. Количество:', Object.keys(allBoardsData).length);
+          } catch (e) {
+              console.error("[DEBUG] loadAllBoardsData: Ошибка при загрузке/парсинге досок из AndroidNative:", e);
+              const data = localStorage.getItem(LS_ALL_BOARDS_KEY);
+              allBoardsData = data ? JSON.parse(data) : {};
+          }
+      } else {
+          console.log('[DEBUG] loadAllBoardsData: AndroidNative недоступен, загрузка из localStorage.');
+          const data = localStorage.getItem(LS_ALL_BOARDS_KEY);
+          allBoardsData = data ? JSON.parse(data) : {};
+      }
+      console.log('[DEBUG] loadAllBoardsData: Финальные данные allBoardsData:', JSON.parse(JSON.stringify(allBoardsData)));
+  }
+
+  function saveAllBoardsToLocalStorage() {
+      const boardsToSave = {};
+      for (const boardId in allBoardsData) {
+          if (allBoardsData[boardId] && !allBoardsData[boardId].isWidgetBoard) {
+              boardsToSave[boardId] = allBoardsData[boardId];
+          }
+      }
+      console.log('[DEBUG] saveAllBoardsToLocalStorage: Сохранение не-виджетных досок. Данные:', JSON.parse(JSON.stringify(boardsToSave)));
+      localStorage.setItem(LS_ALL_BOARDS_KEY, JSON.stringify(boardsToSave));
+  }
+
+  function loadActiveBoardIdFromLocalStorage() {
+      activeBoardId = localStorage.getItem(LS_ACTIVE_BOARD_ID_KEY);
+      console.log('[DEBUG] loadActiveBoardIdFromLocalStorage: Загружен activeBoardId из LS:', activeBoardId);
+  }
+
+  function saveActiveBoardIdToLocalStorage() {
+      console.log('[DEBUG] saveActiveBoardIdToLocalStorage: Сохранение activeBoardId в LS:', activeBoardId);
+      if (activeBoardId) {
+          localStorage.setItem(LS_ACTIVE_BOARD_ID_KEY, activeBoardId);
+      } else {
+          localStorage.removeItem(LS_ACTIVE_BOARD_ID_KEY);
+      }
+  }
+
+  // --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
+  function updateCurrentBoardTitle() {
+      let title = "Моя Умная Доска";
+      if (activeBoardId && allBoardsData[activeBoardId] && allBoardsData[activeBoardId].name) {
+          title = allBoardsData[activeBoardId].name;
+          if (allBoardsData[activeBoardId].isWidgetBoard) {
+              title += " (Виджет)";
+          }
+      } else if (activeBoardId === widgetBoardIdFromNative && widgetBoardIdFromNative) {
+          title = WIDGET_BOARD_NAME_JS + " (Виджет)";
+      }
+      currentBoardTitleEl.textContent = title;
+      console.log('[DEBUG] updateCurrentBoardTitle: Установлен заголовок:', title);
+  }
+
+  function renderBoardList() {
+      boardListEl.innerHTML = '';
+      const tempAllBoardsForList = { ...allBoardsData };
+
+      if (widgetBoardIdFromNative && !tempAllBoardsForList[widgetBoardIdFromNative]) {
+          tempAllBoardsForList[widgetBoardIdFromNative] = { id: widgetBoardIdFromNative, name: WIDGET_BOARD_NAME_JS, columns: [], isWidgetBoard: true };
+      }
+
+      const boardIdsToRender = Object.keys(tempAllBoardsForList);
+
+      if (boardIdsToRender.length === 0) {
+          boardListEl.innerHTML = '<li style="padding: 0.75rem 1rem; color: var(--text-secondary);">Нет досок. Создайте новую!</li>';
+          return;
+      }
+
+      boardIdsToRender.sort((a, b) => {
+          const aIsWidget = tempAllBoardsForList[a]?.isWidgetBoard;
+          const bIsWidget = tempAllBoardsForList[b]?.isWidgetBoard;
+          if (aIsWidget && !bIsWidget) return -1;
+          if (!aIsWidget && bIsWidget) return 1;
+          return (tempAllBoardsForList[a]?.name || "").localeCompare(tempAllBoardsForList[b]?.name || "");
+      }).forEach(boardId => {
+          const boardData = tempAllBoardsForList[boardId];
+          if (!boardData) return;
+
+          const listItem = document.createElement('li');
+          listItem.className = 'board-list-item';
+          listItem.dataset.boardId = boardId;
+
+          const boardNameSpan = document.createElement('span');
+          boardNameSpan.textContent = boardData.name + (boardData.isWidgetBoard ? " (Виджет)" : "");
+          boardNameSpan.style.flexGrow = "1";
+          listItem.appendChild(boardNameSpan);
+
+          if (boardId === activeBoardId) listItem.classList.add('active-board');
+
+          listItem.addEventListener('click', (e) => {
+              if (e.target.closest('button.btn-icon')) return;
+              switchBoard(boardId);
+          });
+
+          if (!boardData.isWidgetBoard) {
+              const controlsContainer = document.createElement('div');
+              controlsContainer.className = 'board-item-controls';
+              const editBoardNameBtn = document.createElement('button');
+              editBoardNameBtn.innerHTML = ICONS.edit;
+              editBoardNameBtn.className = 'btn-icon btn-edit-board-name';
+              editBoardNameBtn.title = 'Редактировать название доски';
+              editBoardNameBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  handleEditBoardName(boardId, boardData.name);
+              });
+              controlsContainer.appendChild(editBoardNameBtn);
+
+              const deleteBoardItemBtn = document.createElement('button');
+              deleteBoardItemBtn.innerHTML = '&times;';
+              deleteBoardItemBtn.className = 'btn-icon btn-delete-board-item';
+              deleteBoardItemBtn.title = `Удалить доску "${boardData.name}"`;
+              deleteBoardItemBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  handleDeleteBoard(boardId, boardData.name);
+              });
+              controlsContainer.appendChild(deleteBoardItemBtn);
+              listItem.appendChild(controlsContainer);
+          }
+          boardListEl.appendChild(listItem);
+      });
+  }
+
+  // --- ДЕЙСТВИЯ С ДОСКАМИ ---
+  async function createNewBoard() {
+      const boardName = newBoardNameInput.value.trim();
+      if (!boardName) { alert("Пожалуйста, введите название для новой доски."); newBoardNameInput.focus(); return; }
+
+      let receivedBoardId;
+      if (isNativeBridgeAvailable()) {
+          console.log(`[DEBUG] createNewBoard: Создание обычной доски "${boardName}" через AndroidNative`);
+          try {
+              receivedBoardId = await AndroidNative.saveBoard(null, boardName);
+              if (!receivedBoardId || typeof receivedBoardId !== 'string' || receivedBoardId.trim() === "") {
+                  console.error("[DEBUG] createNewBoard: AndroidNative.saveBoard не вернул корректный ID. Получено:", receivedBoardId, ". Генерируем fallback ID.");
+                  receivedBoardId = generateId('board_native_fail_');
+              } else {
+                   console.log("[DEBUG] createNewBoard: ID получен от AndroidNative:", receivedBoardId);
+              }
+          } catch (e) {
+              console.error("[DEBUG] createNewBoard: Ошибка при вызове AndroidNative.saveBoard:", e);
+              receivedBoardId = generateId('board_native_err_');
+          }
+      } else {
+          receivedBoardId = generateId('board_ls_');
+      }
+
+      allBoardsData[receivedBoardId] = {
+          id: receivedBoardId,
+          name: boardName,
+          columns: [
+              { id: generateId('col_default_1_'), title: 'Запланировано 📝', tasks: [] },
+              { id: generateId('col_default_2_'), title: 'В процессе 🚀', tasks: [] },
+              { id: generateId('col_default_3_'), title: 'Готово 🎉', tasks: [] }
+          ],
+          isWidgetBoard: false
+      };
+
+      if (!isNativeBridgeAvailable()) {
+          saveAllBoardsToLocalStorage();
+      } else {
+          // После успешного сохранения через Native, данные должны быть уже в БД.
+          // Перезагрузим все доски, чтобы allBoardsData в JS был актуален.
+          await loadAllBoardsData();
+      }
+
+      switchBoard(receivedBoardId);
+      newBoardNameInput.value = '';
+      if (sidebar.classList.contains('active')) toggleSidebar();
+  }
+
+  async function handleEditBoardName(boardId, currentName) {
+      const newName = prompt(`Введите новое название для доски "${currentName}":`, currentName);
+      if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+          const trimmedNewName = newName.trim();
+          if (isNativeBridgeAvailable() && allBoardsData[boardId] && !allBoardsData[boardId].isWidgetBoard) {
+              console.log(`[DEBUG] handleEditBoardName: Редактирование имени доски ID: ${boardId} на "${trimmedNewName}" через AndroidNative`);
+              await AndroidNative.saveBoard(boardId, trimmedNewName);
+              if(allBoardsData[boardId]) allBoardsData[boardId].name = trimmedNewName;
+          } else if (allBoardsData[boardId] && !allBoardsData[boardId].isWidgetBoard) {
+             allBoardsData[boardId].name = trimmedNewName;
+             saveAllBoardsToLocalStorage();
+          } else if (allBoardsData[boardId] && allBoardsData[boardId].isWidgetBoard) {
+              alert("Название доски виджета не может быть изменено из этого интерфейса.");
+              return;
+          }
+          renderBoardList();
+          if (boardId === activeBoardId) {
+              updateCurrentBoardTitle();
+          }
+      } else if (newName !== null && newName.trim() === '') {
+          alert("Название доски не может быть пустым.");
+      }
+  }
+
+  async function switchBoard(newBoardId) {
+      console.log(`[DEBUG] switchBoard: Переключение на доску ID: ${newBoardId}. Текущая активная: ${activeBoardId}`);
+      if (activeBoardId === newBoardId && boardContainer.children.length > 0 && document.getElementById('boardContainer').innerHTML.trim() !== '') {
+           console.log(`[DEBUG] switchBoard: Доска ${newBoardId} уже активна и отображена.`);
+           if (sidebar.classList.contains('active')) toggleSidebar();
+           return;
+      }
+      if (activeBoardId && allBoardsData[activeBoardId] && !allBoardsData[activeBoardId].isWidgetBoard) {
+          saveCurrentBoardStateToLocalStorage();
+      }
+      activeBoardId = newBoardId;
+      saveActiveBoardIdToLocalStorage();
+      await loadAndRenderBoardContent();
+      if (sidebar.classList.contains('active')) toggleSidebar();
+  }
+
+  async function loadAndRenderBoardContent() {
+      console.log('[DEBUG] loadAndRenderBoardContent: Загрузка доски. activeBoardId:', activeBoardId);
+      boardContainer.innerHTML = '';
+
+      if (!activeBoardId) {
+          console.log('[DEBUG] loadAndRenderBoardContent: activeBoardId не установлен.');
+          const boardKeys = Object.keys(allBoardsData);
+          const nonWidgetBoardKeys = boardKeys.filter(id => allBoardsData[id] && !allBoardsData[id].isWidgetBoard);
+
+          if (widgetBoardIdFromNative && allBoardsData[widgetBoardIdFromNative]) {
+              activeBoardId = widgetBoardIdFromNative;
+          } else if (nonWidgetBoardKeys.length > 0) {
+              activeBoardId = nonWidgetBoardKeys[0];
+          } else if (widgetBoardIdFromNative) {
+              activeBoardId = widgetBoardIdFromNative;
+          } else if (boardKeys.length > 0) {
+              activeBoardId = boardKeys[0];
+          }
+
+          if (activeBoardId) {
+              saveActiveBoardIdToLocalStorage();
+          } else {
+              boardContainer.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">Создайте или выберите доску.</p>`;
+              updateCurrentBoardTitle();
+              renderBoardList();
+              return;
+          }
+      }
+
+      updateCurrentBoardTitle();
+      renderBoardList();
+
+      let currentBoardData = allBoardsData[activeBoardId];
+
+      if (isNativeBridgeAvailable() && activeBoardId &&
+          (!currentBoardData || !currentBoardData.columns || currentBoardData.columns.length === 0 || (currentBoardData && currentBoardData.isWidgetBoard))) {
+          console.log(`[DEBUG] loadAndRenderBoardContent: Загрузка задач для доски ID: ${activeBoardId} через AndroidNative.`);
+          try {
+              const notesJson = await AndroidNative.getNotesForBoard(activeBoardId);
+              const notes = JSON.parse(notesJson);
+
+              if (!currentBoardData) {
+                  currentBoardData = {
+                      id: activeBoardId,
+                      name: activeBoardId === widgetBoardIdFromNative ? WIDGET_BOARD_NAME_JS : "Загруженная доска",
+                      isWidgetBoard: activeBoardId === widgetBoardIdFromNative,
+                      columns: []
+                  };
+                  allBoardsData[activeBoardId] = currentBoardData;
+                  updateCurrentBoardTitle();
+                  renderBoardList();
+              }
+
+              if (currentBoardData.isWidgetBoard) {
+                  currentBoardData.columns = [{ id: activeBoardId + "_col", title: currentBoardData.name || WIDGET_BOARD_NAME_JS, tasks: notes }];
+              } else {
+                  // Для обычных досок, если колонки пусты (например, после createNewBoard и loadAllBoardsData),
+                  // но задачи пришли (маловероятно, если getNotesForBoard возвращает только задачи для виджета),
+                  // или если мы хотим принудительно обновить задачи из Native.
+                  // Если getNotesForBoard для обычных досок не возвращает структуру колонок,
+                  // мы должны полагаться на колонки, созданные в createNewBoard или сохраненные в LS.
+                  // Если же getNotesForBoard ВОЗВРАЩАЕТ структуру с колонками для обычных досок, то этот код нужно будет изменить.
+                  // Пока что, если это не доска виджета и колонки пусты, но задачи есть (странная ситуация), создадим одну колонку.
+                  if (currentBoardData.columns.length === 0 && notes.length > 0) {
+                      console.warn(`[DEBUG] loadAndRenderBoardContent: Обычная доска ${activeBoardId} не имеет колонок, но для нее загружены задачи. Создание дефолтной колонки.`);
+                      currentBoardData.columns = [{ id: generateId('col_runtime_'), title: 'Задачи', tasks: notes }];
+                  } else if (currentBoardData.columns.length === 0 && allBoardsData[activeBoardId] && allBoardsData[activeBoardId].columns.length > 0) {
+                      // Если currentBoardData.columns пуст, но в allBoardsData[activeBoardId].columns есть данные (после createNewBoard)
+                      currentBoardData.columns = allBoardsData[activeBoardId].columns;
+                  }
+              }
+              allBoardsData[activeBoardId] = currentBoardData;
+          } catch (e) {
+              console.error("[DEBUG] loadAndRenderBoardContent: Ошибка при загрузке заметок для доски:", activeBoardId, e);
+              boardContainer.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--accent-danger);">Ошибка загрузки данных доски.</p>`;
+              return;
+          }
+      } else if (!currentBoardData) {
+          console.warn('[DEBUG] loadAndRenderBoardContent: Нет данных для доски ID:', activeBoardId);
+          boardContainer.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">Не удалось загрузить доску.</p>`;
+          return;
+      }
+
+      if (currentBoardData && currentBoardData.columns && currentBoardData.columns.length > 0) {
+          console.log('[DEBUG] loadAndRenderBoardContent: Отображение колонок для доски ID:', activeBoardId, 'Колонки:', currentBoardData.columns.map(c=>c.title));
+          currentBoardData.columns.forEach(colData => {
+              const columnEl = createColumnElement(colData.id, colData.title, colData.tasks || []);
+              if (columnEl) boardContainer.appendChild(columnEl);
+          });
+      } else if (currentBoardData) {
+          boardContainer.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">На этой доске пока нет колонок. <button class="btn" onclick="addColumnToCurrentBoard()">Создать колонку</button></p>`;
+      } else {
+          boardContainer.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">Выберите или создайте доску.</p>`;
+      }
+  }
+
+  async function handleDeleteBoard(boardIdToDelete, boardName) {
+      console.log(`[DEBUG] handleDeleteBoard: Попытка удалить доску ID: ${boardIdToDelete}, Имя: ${boardName}`);
+      showCustomConfirm(`Вы уверены, что хотите удалить доску "${boardName}"? Это действие необратимо.`, async (confirmed) => {
+          if (confirmed) {
+              console.log('[DEBUG] handleDeleteBoard: Удаление доски подтверждено.');
+              const boardData = allBoardsData[boardIdToDelete];
+              if (isNativeBridgeAvailable() && boardData && !boardData.isWidgetBoard) {
+                  console.log('[DEBUG] handleDeleteBoard: Удаление обычной доски через AndroidNative.');
+                  await AndroidNative.deleteBoard(boardIdToDelete);
+              } else if (boardData && boardData.isWidgetBoard) {
+                  alert("Доска виджета не может быть удалена из этого интерфейса.");
+                  return;
+              }
+
+              delete allBoardsData[boardIdToDelete];
+              if (!isNativeBridgeAvailable() || (boardData && !boardData.isWidgetBoard)) {
+                 saveAllBoardsToLocalStorage();
+              }
+
+              if (activeBoardId === boardIdToDelete) {
+                  const remainingNonWidgetBoardIds = Object.keys(allBoardsData).filter(id => allBoardsData[id] && !allBoardsData[id].isWidgetBoard);
+                  let newActiveBoardId = null;
+                  if (remainingNonWidgetBoardIds.length > 0) {
+                      newActiveBoardId = remainingNonWidgetBoardIds[0];
+                  } else if (widgetBoardIdFromNative && allBoardsData[widgetBoardIdFromNative]) {
+                      newActiveBoardId = widgetBoardIdFromNative;
+                  }
+                  activeBoardId = newActiveBoardId;
+                  saveActiveBoardIdToLocalStorage();
+              }
+              await loadAllBoardsData();
+              await loadAndRenderBoardContent();
+              renderBoardList();
+              console.log('[DEBUG] handleDeleteBoard: Доска удалена, данные и UI обновлены.');
+          } else {
+              console.log('[DEBUG] handleDeleteBoard: Удаление отменено пользователем.');
+          }
+      });
+  }
+
+  function addColumnToCurrentBoard() {
+      console.log('[DEBUG] addColumnToCurrentBoard вызван. activeBoardId:', activeBoardId);
+      if (!activeBoardId || !allBoardsData[activeBoardId]) {
+          alert("Сначала выберите или создайте доску!");
+          return;
+      }
+      if (allBoardsData[activeBoardId].isWidgetBoard) {
+          alert("Добавление колонок на доску виджета не поддерживается из этого интерфейса.");
+          return;
+      }
+
+      const newColId = generateId('col');
+      const newColTitle = 'Новая колонка';
+      const newColElement = createColumnElement(newColId, newColTitle, []);
+      boardContainer.appendChild(newColElement);
+
+      if (!allBoardsData[activeBoardId].columns) {
+          allBoardsData[activeBoardId].columns = [];
+      }
+      allBoardsData[activeBoardId].columns.push({ id: newColId, title: newColTitle, tasks: [] });
+
+      const colTitleInput = newColElement.querySelector('.column-title-input');
+      if(colTitleInput) colTitleInput.focus();
+      saveCurrentBoardState();
+  }
+
+  function createSubtaskElement(subtaskId, content = '', done = false, parentTaskId) {
+      const subtaskItem = document.createElement('li');
+      subtaskItem.className = 'subtask-item';
+      subtaskItem.dataset.subtaskId = subtaskId || generateId('subtask');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox'; checkbox.checked = done;
+
+      const input = document.createElement('input');
+      input.type = 'text'; input.value = content; input.placeholder = 'Новая подзадача...';
+      if(done) input.classList.add('done');
+
+      checkbox.addEventListener('change', () => {
+          input.classList.toggle('done', checkbox.checked);
+          saveCurrentBoardState();
+      });
+      input.addEventListener('input', saveCurrentBoardState);
+      input.addEventListener('blur', saveCurrentBoardState);
+
+      const deleteSubtaskBtn = document.createElement('button');
+      deleteSubtaskBtn.innerHTML = '&times;'; deleteSubtaskBtn.className = 'btn-delete-subtask';
+      deleteSubtaskBtn.title = 'Удалить подзадачу';
+      deleteSubtaskBtn.addEventListener('click', () => {
+          subtaskItem.remove();
+          saveCurrentBoardState();
+      });
+
+      subtaskItem.appendChild(checkbox); subtaskItem.appendChild(input); subtaskItem.appendChild(deleteSubtaskBtn);
+      return subtaskItem;
+  }
+
+ function createTaskElement(id, content = '', done = false, priority = 'medium', createdAt, subtasksData = []) {
+    const task = document.createElement('div');
+    task.className = 'task';
+    task.dataset.taskId = id || generateId('task');
+    task.dataset.priority = priority;
+    task.dataset.createdAt = createdAt || new Date().toISOString();
+    if (done) task.classList.add('task-done');
+    task.classList.add(`priority-${priority}`);
+    task.draggable = !(activeBoardId && allBoardsData[activeBoardId] && allBoardsData[activeBoardId].isWidgetBoard);
+
+    if (task.draggable) {
+        task.addEventListener('dragstart', (e) => { task.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+        task.addEventListener('dragend', () => { task.classList.remove('dragging'); saveCurrentBoardState(); });
+    }
+
+    const taskMainContent = document.createElement('div'); taskMainContent.className = 'task-main-content';
+    const taskTextarea = document.createElement('textarea'); // ИЗМЕНЕНО: textarea -> taskTextarea
+    taskTextarea.value = content; taskTextarea.rows = 3; taskTextarea.placeholder = 'Введите описание задачи...';
+    taskTextarea.addEventListener('input', () => { taskTextarea.style.height = 'auto'; taskTextarea.style.height = taskTextarea.scrollHeight + 'px'; saveCurrentBoardState(); });
+    // ИСПРАВЛЕНИЕ: Используем taskTextarea вместо textarea
+    requestAnimationFrame(() => { if(taskTextarea.isConnected) {taskTextarea.style.height = 'auto'; taskTextarea.style.height = taskTextarea.scrollHeight + 'px';} });
+
+    const timestampEl = document.createElement('div'); timestampEl.className = 'task-timestamp';
+    const date = new Date(task.dataset.createdAt);
+    timestampEl.textContent = `Создано: ${date.toLocaleDateString('ru-RU')} ${date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`;
+    taskMainContent.appendChild(taskTextarea); taskMainContent.appendChild(timestampEl);
+    task.appendChild(taskMainContent);
+
+    const taskFooter = document.createElement('div'); taskFooter.className = 'task-footer';
+    const taskControls = document.createElement('div'); taskControls.className = 'task-controls';
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = done;
+    checkbox.title = 'Отметить как выполненную';
+    checkbox.addEventListener('change', () => { task.classList.toggle('task-done', checkbox.checked); saveCurrentBoardState(); });
+
+    const priorityContainer = document.createElement('div'); priorityContainer.className = 'priority-selector-container';
+    const priorityDot = document.createElement('div'); priorityDot.className = `priority-dot ${priority}`;
+    const prioritySelector = document.createElement('select'); prioritySelector.className = 'priority-selector';
+    prioritySelector.title = 'Установить приоритет';
+    const priorities = { low: 'Низкий', medium: 'Средний', high: 'Высокий' };
+    for (const pValue in priorities) {
+      const option = document.createElement('option'); option.value = pValue; option.textContent = priorities[pValue];
+      if (pValue === priority) option.selected = true; prioritySelector.appendChild(option);
+    }
+    prioritySelector.addEventListener('change', (e) => {
+      task.classList.remove(`priority-${task.dataset.priority}`); priorityDot.classList.remove(task.dataset.priority);
+      task.dataset.priority = e.target.value; task.classList.add(`priority-${e.target.value}`); priorityDot.classList.add(e.target.value);
+      saveCurrentBoardState();
+    });
+    priorityContainer.appendChild(checkbox); priorityContainer.appendChild(priorityDot); priorityContainer.appendChild(prioritySelector);
+    taskControls.appendChild(priorityContainer);
+
+    const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = ICONS.delete;
+    deleteBtn.className = 'btn-delete btn-delete-task'; deleteBtn.title = 'Удалить задачу';
+    deleteBtn.addEventListener('click', () => {
+        const currentTaskId = task.dataset.taskId;
+        showCustomConfirm('Вы уверены, что хотите удалить эту задачу?', async (confirmed) => {
+            if (confirmed) {
+                const isWidgetTask = activeBoardId && allBoardsData[activeBoardId] && allBoardsData[activeBoardId].isWidgetBoard;
+                if (isWidgetTask && isNativeBridgeAvailable()) {
+                    await AndroidNative.deleteNote(currentTaskId, activeBoardId);
+                }
+                task.remove();
+                saveCurrentBoardState();
+                 if (isWidgetTask && isNativeBridgeAvailable()) {
+                      await loadAndRenderBoardContent();
+                 }
+            }
+        });
+    });
+
+    taskFooter.appendChild(taskControls); taskFooter.appendChild(deleteBtn);
+    task.appendChild(taskFooter);
+
+    const subtasksSection = document.createElement('div'); subtasksSection.className = 'subtasks-section';
+    const subtasksHeader = document.createElement('div'); subtasksHeader.className = 'subtasks-header';
+    subtasksHeader.innerHTML = `<h4>Подзадачи</h4>${ICONS.subtaskToggle}`;
+    const subtasksList = document.createElement('ul'); subtasksList.className = 'subtasks-list collapsed';
+    subtasksHeader.addEventListener('click', () => { subtasksList.classList.toggle('collapsed'); });
+    (subtasksData || []).forEach(subtask => {
+        subtasksList.appendChild(createSubtaskElement(subtask.id, subtask.content, subtask.done, task.dataset.taskId));
+    });
+    const addSubtaskBtn = document.createElement('button'); addSubtaskBtn.className = 'btn-add-subtask';
+    addSubtaskBtn.innerHTML = `${ICONS.add} Добавить подзадачу`;
+    addSubtaskBtn.addEventListener('click', () => {
+        const newSubtaskEl = createSubtaskElement(null, '', false, task.dataset.taskId);
+        subtasksList.appendChild(newSubtaskEl);
+        if (subtasksList.classList.contains('collapsed')) { subtasksList.classList.remove('collapsed'); }
+        const subtaskInput = newSubtaskEl.querySelector('input[type="text"]');
+        if (subtaskInput) subtaskInput.focus();
+        saveCurrentBoardState();
+    });
+    subtasksSection.appendChild(subtasksHeader); subtasksSection.appendChild(subtasksList); subtasksSection.appendChild(addSubtaskBtn);
+    task.appendChild(subtasksSection);
+    return task;
+  }
+
+  function createColumnElement(id, title = 'Новая колонка', tasksData = []) {
+    const column = document.createElement('div'); column.className = 'column';
+    column.dataset.columnId = id || generateId('col');
+
+    const columnHeader = document.createElement('div'); columnHeader.className = 'column-header';
+    const titleInput = document.createElement('input'); titleInput.type = 'text'; titleInput.value = title;
+    titleInput.className = 'column-title-input'; titleInput.title = 'Изменить название колонки';
+
+    const currentBoardIsWidget = activeBoardId && allBoardsData[activeBoardId] && allBoardsData[activeBoardId].isWidgetBoard;
+    titleInput.disabled = currentBoardIsWidget;
+
+    if (!currentBoardIsWidget) {
+      titleInput.addEventListener('input', saveCurrentBoardState);
+      titleInput.addEventListener('blur', saveCurrentBoardState);
+    }
+
+    const deleteColumnBtn = document.createElement('button'); deleteColumnBtn.innerHTML = ICONS.delete;
+    deleteColumnBtn.className = 'btn-delete btn-delete-column'; deleteColumnBtn.title = 'Удалить колонку';
+    deleteColumnBtn.style.display = currentBoardIsWidget ? 'none' : 'flex';
+
+    if (!currentBoardIsWidget) {
+        deleteColumnBtn.addEventListener('click', () => {
+            const currentColumnId = column.dataset.columnId;
+            const titleValue = titleInput.value || "Без названия";
+            let confirmationMessage = `Удалить колонку "${titleValue}"?`;
+            if (column.querySelectorAll('.tasks-list > .task').length > 0) {
+                confirmationMessage = `Колонка "${titleValue}" содержит задачи. Вы уверены, что хотите её удалить?`;
+            }
+            showCustomConfirm(confirmationMessage, (confirmed) => {
+                if (confirmed) {
+                    column.remove();
+                    saveCurrentBoardState();
+                }
+            });
+        });
+    }
+    columnHeader.appendChild(titleInput); columnHeader.appendChild(deleteColumnBtn);
+
+    const tasksListEl = document.createElement('div'); tasksListEl.className = 'tasks-list';
+    if (!currentBoardIsWidget) {
+        tasksListEl.addEventListener('dragover', e => {
+          e.preventDefault();
+          const draggingTask = document.querySelector('.task.dragging');
+          if (!draggingTask) return;
+          const afterElement = getDragAfterElement(tasksListEl, e.clientY);
+          if (afterElement == null) { tasksListEl.appendChild(draggingTask); }
+          else { tasksListEl.insertBefore(draggingTask, afterElement); }
+        });
+    }
+    column.appendChild(columnHeader); column.appendChild(tasksListEl);
+    (tasksData || []).forEach(taskData => {
+      const taskEl = createTaskElement(taskData.id, taskData.content, taskData.done, taskData.priority, taskData.createdAt, taskData.subtasks);
+      tasksListEl.appendChild(taskEl);
+    });
+
+    const addTaskBtn = document.createElement('button'); addTaskBtn.innerHTML = `${ICONS.add} Добавить задачу`;
+    addTaskBtn.className = 'btn btn-add-task-in-column';
+    addTaskBtn.addEventListener('click', () => {
+      const newTask = createTaskElement(null, '', false, 'medium', new Date().toISOString(), []);
+      tasksListEl.appendChild(newTask);
+      const newTaskTextarea = newTask.querySelector('.task-main-content textarea'); // ИЗМЕНЕНО: taskTextarea -> newTaskTextarea
+      if(newTaskTextarea) { newTaskTextarea.focus(); requestAnimationFrame(() => { if(newTaskTextarea.isConnected) {newTaskTextarea.style.height = 'auto'; newTaskTextarea.style.height = newTaskTextarea.scrollHeight + 'px';} }); }
+      saveCurrentBoardState();
+    });
+    column.appendChild(addTaskBtn);
+    return column;
+  }
+
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.task:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; }
+      else { return closest; }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function saveCurrentBoardStateToLocalStorage() {
+      if (!activeBoardId || !allBoardsData[activeBoardId] || (allBoardsData[activeBoardId] && allBoardsData[activeBoardId].isWidgetBoard)) {
+          console.log('[DEBUG] saveCurrentBoardStateToLocalStorage: Активная доска является виджетом или не выбрана/не существует. Сохранение в LS пропущено.');
+          return;
+      }
+      console.log('[DEBUG] saveCurrentBoardStateToLocalStorage: Сохранение состояния обычной доски в localStorage. ID:', activeBoardId);
+      const columnsData = [];
+      const columnElements = Array.from(boardContainer.children);
+
+      columnElements.forEach(columnEl => {
+          if (!columnEl.classList.contains('column') || !columnEl.dataset.columnId) {
+              console.warn("[DEBUG] saveCurrentBoardStateToLocalStorage: Пропущен элемент, не являющийся колонкой:", columnEl);
+              return;
+          }
+
+          const titleInputElement = columnEl.querySelector('.column-title-input');
+          const columnTitle = titleInputElement ? titleInputElement.value : "Заголовок отсутствует";
+          if (!titleInputElement) {
+              console.error("Ошибка в saveCurrentBoardStateToLocalStorage: не найден .column-title-input в колонке:", columnEl.dataset.columnId, columnEl);
+          }
+
+          const tasksElements = Array.from(columnEl.querySelectorAll('.tasks-list > .task'));
+          const tasks = tasksElements.map(taskEl => {
+              const textareaElement = taskEl.querySelector('.task-main-content textarea');
+              const taskContent = textareaElement ? textareaElement.value : "";
+              if(!textareaElement) console.error("Ошибка в saveCurrentBoardStateToLocalStorage: не найден textarea в задаче:", taskEl.dataset.taskId, taskEl);
+
+              return {
+                  id: taskEl.dataset.taskId || generateId('task'),
+                  content: taskContent,
+                  done: taskEl.classList.contains('task-done'),
+                  priority: taskEl.dataset.priority || 'medium',
+                  createdAt: taskEl.dataset.createdAt || new Date().toISOString(),
+                  subtasks: Array.from(taskEl.querySelectorAll('.subtask-item')).map(subtaskEl => {
+                      const subtaskInputElement = subtaskEl.querySelector('input[type="text"]');
+                      const subtaskContent = subtaskInputElement ? subtaskInputElement.value : "";
+                      if(!subtaskInputElement) console.error("Ошибка в saveCurrentBoardStateToLocalStorage: не найден input[type=text] в подзадаче:", subtaskEl.dataset.subtaskId, subtaskEl);
+
+                      const subtaskCheckboxElement = subtaskEl.querySelector('input[type="checkbox"]');
+                      const subtaskDone = subtaskCheckboxElement ? subtaskCheckboxElement.checked : false;
+                      if(!subtaskCheckboxElement) console.error("Ошибка в saveCurrentBoardStateToLocalStorage: не найден input[type=checkbox] в подзадаче:", subtaskEl.dataset.subtaskId, subtaskEl);
+
+                      return {
+                          id: subtaskEl.dataset.subtaskId || generateId('subtask'),
+                          content: subtaskContent,
+                          done: subtaskDone
+                      };
+                  })
+              };
+          });
+          columnsData.push({ id: columnEl.dataset.columnId, title: columnTitle, tasks: tasks });
+      });
+
+      if (allBoardsData[activeBoardId]) {
+        allBoardsData[activeBoardId].columns = columnsData;
+        saveAllBoardsToLocalStorage();
+      } else {
+        console.warn("[DEBUG] saveCurrentBoardStateToLocalStorage: Нет данных для активной доски в allBoardsData. ID:", activeBoardId);
+      }
+  }
+
+  async function saveCurrentBoardState() {
+      console.log('[DEBUG] saveCurrentBoardState: Начало. activeBoardId:', activeBoardId);
+      if (!activeBoardId || !allBoardsData[activeBoardId]) {
+          console.warn('[DEBUG] saveCurrentBoardState: Нет активной доски или данных для нее. Сохранение прервано.');
+          return;
+      }
+
+      const currentBoard = allBoardsData[activeBoardId];
+      if (currentBoard.isWidgetBoard && isNativeBridgeAvailable()) {
+          console.log('[DEBUG] saveCurrentBoardState: Сохранение состояния доски виджета через AndroidNative.');
+          const columnElements = Array.from(boardContainer.children);
+          if (columnElements.length > 0 && columnElements[0].classList.contains('column')) {
+              const widgetColumnElement = columnElements[0];
+              const tasksElements = Array.from(widgetColumnElement.querySelectorAll('.tasks-list > .task'));
+
+              for (const [index, taskEl] of tasksElements.entries()) {
+                  const noteId = taskEl.dataset.taskId;
+                  const textareaElement = taskEl.querySelector('.task-main-content textarea');
+                  const content = textareaElement ? textareaElement.value : "";
+                  if(!textareaElement) console.error("Ошибка saveCurrentBoardState (widget): не найден textarea в задаче:", noteId, taskEl);
+
+                  const priority = taskEl.dataset.priority || 'medium';
+                  const isDone = taskEl.classList.contains('task-done');
+
+                  console.log(`[DEBUG] saveCurrentBoardState (widget): Сохранение заметки ID: ${noteId}, Content: ${content.substring(0,20)}..., Order: ${index}`);
+                  await AndroidNative.saveNote(activeBoardId, noteId, content, isDone, priority, index);
+              }
+          }
+      } else if (!currentBoard.isWidgetBoard) {
+          saveCurrentBoardStateToLocalStorage();
+      }
+      console.log('[DEBUG] saveCurrentBoardState: Состояние сохранено.');
+  }
+
+  // --- ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ---
+  async function initializeApp() {
+      console.log("[DEBUG] initializeApp: Начало инициализации приложения.");
+      if (isNativeBridgeAvailable()) {
+          console.log("[DEBUG] initializeApp: AndroidNative доступен.");
+          try {
+              const idFromNative = await AndroidNative.getWidgetBoardId();
+              if (idFromNative && idFromNative !== "null" && idFromNative !== "undefined" && idFromNative.trim() !== "") {
+                 widgetBoardIdFromNative = idFromNative;
+              } else {
+                 widgetBoardIdFromNative = null;
+              }
+              console.log("[DEBUG] initializeApp: Получен widgetBoardIdFromNative:", widgetBoardIdFromNative);
+          } catch (e) {
+              console.error("[DEBUG] initializeApp: Ошибка при вызове AndroidNative.getWidgetBoardId():", e);
+              widgetBoardIdFromNative = null;
+          }
+      } else {
+          console.warn("[DEBUG] initializeApp: AndroidNative НЕ доступен.");
+          widgetBoardIdFromNative = null;
+      }
+
+      await loadAllBoardsData();
+      loadActiveBoardIdFromLocalStorage();
+
+      if (widgetBoardIdFromNative && (!activeBoardId || !allBoardsData[activeBoardId])) {
+          activeBoardId = widgetBoardIdFromNative;
+          console.log("[DEBUG] initializeApp: Установлен activeBoardId из widgetBoardIdFromNative:", activeBoardId);
+      } else if (!activeBoardId || !allBoardsData[activeBoardId]) {
+          const nonWidgetBoardKeys = Object.keys(allBoardsData).filter(id => allBoardsData[id] && !allBoardsData[id].isWidgetBoard);
+          if (nonWidgetBoardKeys.length > 0) {
+              activeBoardId = nonWidgetBoardKeys[0];
+          } else if (widgetBoardIdFromNative && allBoardsData[widgetBoardIdFromNative]) {
+              activeBoardId = widgetBoardIdFromNative;
+          } else if (Object.keys(allBoardsData).length > 0) {
+               activeBoardId = Object.keys(allBoardsData)[0];
+          }
+      }
+
+      if (!activeBoardId && !isNativeBridgeAvailable() && Object.keys(allBoardsData).length === 0) {
+          console.log('[DEBUG] initializeApp: Досок нет, AndroidNative недоступен. Создание доски по умолчанию (LS).');
+          const defaultBoardId = generateId('board_ls_default_');
+          allBoardsData[defaultBoardId] = { id: defaultBoardId, name: "Моя первая доска (LS)", columns: [
+              { id: generateId('col_ls_default_'), title: 'Сделать (LS)', tasks: [{id: generateId('task_ls_default_'), content: 'Начать работу! (LS)', done: false, priority: 'medium', createdAt: new Date().toISOString(), subtasks: [] }]},
+          ], isWidgetBoard: false};
+          activeBoardId = defaultBoardId;
+          saveAllBoardsToLocalStorage();
+      }
+
+      if (activeBoardId) {
+          saveActiveBoardIdToLocalStorage();
+      }
+
+      await loadAndRenderBoardContent();
+      renderBoardList();
+      console.log("[DEBUG] initializeApp: Инициализация завершена. ActiveBoardId:", activeBoardId);
+  }
+
+  // --- Глобальный обработчик для AndroidNative ---
+  window.controller = {
+      handleBoardIdChange: async function(newBoardId) {
+          console.log(`[DEBUG] JS controller.handleBoardIdChange вызван с newBoardId: ${newBoardId}`);
+          if (newBoardId && newBoardId !== "null" && newBoardId !== "undefined" && newBoardId.trim() !== "") {
+              widgetBoardIdFromNative = newBoardId;
+              await loadAllBoardsData();
+              if (activeBoardId !== newBoardId) {
+                 await switchBoard(newBoardId);
+              } else {
+                 await loadAndRenderBoardContent();
+              }
+              renderBoardList();
+          } else {
+              console.warn("[DEBUG] JS controller.handleBoardIdChange: Получен невалидный newBoardId:", newBoardId);
+          }
+      },
+      refreshCurrentBoard: async function() {
+          console.log("[DEBUG] JS controller.refreshCurrentBoard вызван");
+          if (activeBoardId) {
+              await loadAllBoardsData();
+              await loadAndRenderBoardContent();
+              renderBoardList();
+          }
+      }
+  };
+
+  // --- ПРИВЯЗКА ОБРАБОТЧИКОВ И ЗАПУСК ---
+  customConfirmOkBtn.addEventListener('click', () => {
+      if (confirmCallback) confirmCallback(true);
+      hideCustomConfirm();
+  });
+  customConfirmCancelBtn.addEventListener('click', () => {
+      if (confirmCallback) confirmCallback(false);
+      hideCustomConfirm();
+  });
+  customConfirmModal.addEventListener('click', (e) => {
+      if (e.target === customConfirmModal) {
+          if (confirmCallback) confirmCallback(false);
+          hideCustomConfirm();
+      }
+  });
+  appTitleButton.addEventListener('click', toggleSidebar);
+  closeSidebarBtn.addEventListener('click', toggleSidebar);
+  overlay.addEventListener('click', toggleSidebar);
+  addBoardBtn.addEventListener('click', createNewBoard);
+  newBoardNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') createNewBoard(); });
+
+  initializeApp();
+</script>
+</body>
+</html>

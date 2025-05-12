@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">Smart Task Board</string>
+    <string name="my_boards">Мои Доски</string>
+    <string name="create_new_board">Создать новую доску</string>
+    <string name="actions">Действия</string>
+    <string name="add_column">Добавить колонку</string>
+    <string name="column_title_hint">Название колонки</string>
+    <string name="task_content_hint">Описание задачи...</string>
+    <string name="add_task">Добавить задачу</string>
+    <string name="subtasks_header">Подзадачи</string>
+    <string name="add_subtask">Добавить подзадачу</string>
+    <string name="new_board_dialog_title">Новая доска</string>
+    <string name="board_name_hint">Название доски</string>
+    <string name="create">Создать</string>
+    <string name="cancel">Отмена</string>
+    <string name="edit">Редактировать</string>
+    <string name="delete">Удалить</string>
+    <string name="confirm_delete_board_title">Удалить доску?</string>
+    <string name="confirm_delete_board_message">Вы уверены, что хотите удалить доску \"%1$s\"? Это действие необратимо.</string>
+    <string name="confirm_delete_column_title">Удалить колонку?</string>
+    <string name="confirm_delete_column_message">Вы уверены, что хотите удалить колонку \"%1$s\"?</string>
+    <string name="confirm_delete_column_with_tasks_message">Колонка \"%1$s\" содержит задачи. Вы уверены, что хотите её удалить?</string>
+    <string name="confirm_delete_task_title">Удалить задачу?</string>
+    <string name="confirm_delete_task_message">Вы уверены, что хотите удалить эту задачу?</string>
+    <string name="priority_low">Низкий</string>
+    <string name="priority_medium">Средний</string>
+    <string name="priority_high">Высокий</string>
+    <string name="no_boards_message">Нет досок. Создайте новую!</string>
+    <string name="loading_data_error">Ошибка загрузки данных</string>
+    <string name="default_board_name">Моя первая доска</string>
+    <string name="default_column_todo">Сделать</string>
+    <string name="default_column_inprogress">В процессе</string>
+    <string name="default_column_done">Готово</string>
+    <string name="default_task_content">Начать работу!</string>
+
+    <string name="widget_title_text">Заметки Виджета</string>
+    <string name="widget_add_note_description">Добавить новую заметку</string>
+    <string name="widget_no_notes">Нет заметок для отображения</string>
+    <string name="app_widget_description">Отображает заметки из специальной доски.</string>
+
+    <string name="widget_needs_configuration">Виджет требует настройки</string>
+    <string name="widget_tap_to_configure">Нажмите для настройки виджета</string>
+    <string name="widget_default_title">Мои заметки</string>
+</resources>
